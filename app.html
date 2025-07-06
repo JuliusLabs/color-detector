@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android Color Detector</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      color: white;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 100%;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    header {
+      margin: 15px 0 20px;
+      text-align: center;
+      padding: 0 10px;
+    }
+    
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      background: linear-gradient(to right, #00c9ff, #92fe9d);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .subtitle {
+      font-size: 1rem;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .permission-panel {
+      background: rgba(255, 255, 255, 0.9);
+      color: #1a2a6c;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 10px auto 20px;
+      max-width: 500px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .permission-panel p {
+      margin-bottom: 12px;
+      font-size: 1rem;
+    }
+    
+    .video-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.2);
+      padding: 8px;
+    }
+    
+    #video {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      background: #000;
+      transform: scaleX(-1);
+    }
+    
+    #frame {
+      position: absolute;
+      border: 3px solid #00ff00;
+      width: 150px;
+      height: 150px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+    
+    .alarm-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 0, 0, 0.3);
+      display: none;
+      border-radius: 8px;
+      z-index: 5;
+      animation: alarmPulse 1s infinite;
+    }
+    
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+    
+    .panel {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      backdrop-filter: blur(5px);
+    }
+    
+    .panel h2 {
+      margin-bottom: 12px;
+      color: #00c9ff;
+      font-size: 1.3rem;
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0;
+      gap: 12px;
+    }
+    
+    .indicator {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #4CAF50;
+      box-shadow: 0 0 12px rgba(76, 175, 80, 0.7);
+    }
+    
+    .indicator.alarm {
+      background: #f44336;
+      box-shadow: 0 0 12px rgba(244, 67, 54, 0.7);
+      animation: pulse 1s infinite;
+    }
+    
+    .brightness-display {
+      font-size: 1.7rem;
+      font-weight: bold;
+      margin: 8px 0;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+    
+    .threshold {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 15px;
+    }
+    
+    .slider-container {
+      width: 100%;
+      max-width: 280px;
+      margin: 8px 0;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #00c9ff, #92fe9d);
+      outline: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    input[type="range"]:hover {
+      opacity: 1;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: linear-gradient(45deg, #00c9ff, #92fe9d);
+      color: #1a2a6c;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      flex: 1;
+      min-width: 140px;
+    }
+    
+    button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    }
+    
+    button:active {
+      transform: translateY(1px);
+    }
+    
+    button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .instructions {
+      max-width: 500px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      backdrop-filter: blur(5px);
+      font-size: 0.95rem;
+    }
+    
+    .instructions h2 {
+      margin-bottom: 12px;
+      color: #00c9ff;
+      font-size: 1.3rem;
+    }
+    
+    .instructions ul {
+      padding-left: 18px;
+    }
+    
+    .instructions li {
+      margin: 8px 0;
+      line-height: 1.4;
+    }
+    
+    .camera-error {
+      color: #ff6b6b;
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+      white-space: pre-line;
+    }
+    
+    .audio-status {
+      margin-top: 10px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+    
+    .audio-status.success {
+      color: #4CAF50;
+    }
+    
+    .audio-status.error {
+      color: #f44336;
+    }
+    
+    footer {
+      margin-top: 20px;
+      opacity: 0.7;
+      font-size: 0.85rem;
+      padding: 0 15px;
+      text-align: center;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+    
+    @keyframes alarmPulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+      100% { opacity: 0.3; }
+    }
+    
+    @media (max-height: 500px) {
+      .video-container {
+        max-width: 300px;
+      }
+      
+      #frame {
+        width: 120px;
+        height: 120px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .subtitle {
+        font-size: 0.9rem;
+      }
+      
+      button {
+        min-width: 120px;
+        padding: 8px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Android Color Detector</h1>
+      <p class="subtitle">Optimized for mobile devices with working alarm</p>
+    </header>
+    
+    <div class="permission-panel">
+      <p>For the alarm to work, please click the button below</p>
+      <button id="enableAudio">Enable Alarm Sound</button>
+      <div id="audioStatus" class="audio-status">Audio not enabled yet</div>
+    </div>
+    
+    <div class="video-container">
+      <video id="video" width="640" height="480" autoplay playsinline></video>
+      <div id="frame"></div>
+      <div class="alarm-overlay" id="alarmOverlay"></div>
+      <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+      <div id="cameraError" class="camera-error">Camera access denied or not available</div>
+    </div>
+    
+    <audio id="alarm" loop>
+      <source src="alarm.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <div class="dashboard">
+      <div class="panel">
+        <h2>Detection Status</h2>
+        <div class="status">
+          <div class="indicator" id="indicator"></div>
+          <span id="statusText" style="font-size: 1.1rem;">Ready to start</span>
+        </div>
+        <div class="brightness-display">
+          Brightness: <span id="brightnessValue">--</span>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <h2>Settings</h2>
+        <div class="threshold">
+          <label for="thresholdSlider">Alarm Threshold</label>
+          <div class="slider-container">
+            <input type="range" id="thresholdSlider" min="0" max="100" value="50">
+          </div>
+          <div id="thresholdValue">50 (Lower = more sensitive)</div>
+        </div>
+        
+        <div class="controls">
+          <button id="testAlarm">Test Alarm</button>
+          <button id="toggleCamera">Start Camera</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="instructions">
+      <h2>How to Use</h2>
+      <ul>
+        <li><strong>1. Enable Audio</strong> - Click the "Enable Alarm Sound" button first</li>
+        <li><strong>2. Start Camera</strong> - Click "Start Camera" and allow camera access</li>
+        <li><strong>3. Adjust Threshold</strong> - Lower values make the alarm more sensitive</li>
+        <li><strong>4. Test Alarm</strong> - Verify the sound works before using</li>
+        <li><strong>Note:</strong> On PC, check browser address bar for camera/microphone permission icons</li>
+      </ul>
+    </div>
+    
+    <footer>
+      <p>Android Color Detector | Works on Chrome, Firefox, Edge</p>
+    </footer>
+  </div>
+
+  <script>
+    // Get all elements we need
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const alarm = document.getElementById('alarm');
+    const frame = document.getElementById('frame');
+    const indicator = document.getElementById('indicator');
+    const statusText = document.getElementById('statusText');
+    const brightnessValue = document.getElementById('brightnessValue');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    const thresholdValue = document.getElementById('thresholdValue');
+    const testAlarmBtn = document.getElementById('testAlarm');
+    const toggleCameraBtn = document.getElementById('toggleCamera');
+    const alarmOverlay = document.getElementById('alarmOverlay');
+    const enableAudioBtn = document.getElementById('enableAudio');
+    const audioStatus = document.getElementById('audioStatus');
+    const cameraError = document.getElementById('cameraError');
+    
+    // App settings
+    let detectionThreshold = 50;
+    let detectionActive = false;
+    let stream = null;
+    let lastAvgBrightness = 0;
+    let audioEnabled = false;
+    
+    // Set initial threshold display
+    thresholdValue.textContent = `${detectionThreshold} (Lower = more sensitive)`;
+    
+    // When slider changes
+    thresholdSlider.addEventListener('input', function() {
+      detectionThreshold = parseInt(this.value);
+      thresholdValue.textContent = `${detectionThreshold} (Lower = more sensitive)`;
+    });
+    
+    // Enable audio button
+    enableAudioBtn.addEventListener('click', async function() {
+      try {
+        // Try to play alarm (this will trigger permission prompt)
+        alarm.volume = 0.1;
+        await alarm.play();
+        alarm.pause();
+        alarm.currentTime = 0;
+        
+        // Update UI
+        audioEnabled = true;
+        audioStatus.textContent = "Audio enabled!\nAlarm will work now";
+        audioStatus.className = "audio-status success";
+        this.disabled = true;
+        this.textContent = "Audio Enabled";
+        
+        // On PC, check if we need to request microphone permission
+        if (!isMobile()) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => track.stop());
+          } catch (e) {
+            console.log("Microphone permission not granted, but alarm may still work");
+          }
+        }
+      } catch (e) {
+        console.log("Audio error:", e);
+        audioStatus.textContent = "Error: Please allow audio permissions\n" + 
+          (isMobile() ? "Look for a browser popup" : "Check browser address bar for microphone icon");
+        audioStatus.className = "audio-status error";
+      }
+    });
+    
+    // Test alarm button
+    testAlarmBtn.addEventListener('click', async function() {
+      if (!audioEnabled) {
+        audioStatus.textContent = "Please enable audio first";
+        audioStatus.className = "audio-status error";
+        return;
+      }
+      
+      try {
+        // Play alarm
+        alarm.currentTime = 0;
+        alarm.volume = 0.5;
+        await alarm.play();
+        
+        // Show visual alarm
+        frame.style.borderColor = '#ff0000';
+        frame.style.boxShadow = '0 0 25px rgba(255, 0, 0, 0.7)';
+        indicator.className = 'indicator alarm';
+        alarmOverlay.style.display = 'block';
+        statusText.textContent = 'ALARM: Testing';
+        
+        // Stop after 2 seconds
+        setTimeout(() => {
+          resetAlarmState();
+        }, 2000);
+      } catch (e) {
+        console.log("Alarm error:", e);
+        audioStatus.textContent = "Error playing alarm\nTry enabling audio again";
+        audioStatus.className = "audio-status error";
+      }
+    });
+    
+    // Camera toggle button
+    toggleCameraBtn.addEventListener('click', async function() {
+      if (detectionActive) {
+        // Stop camera
+        stopCamera();
+        this.textContent = 'Start Camera';
+        statusText.textContent = 'Camera Stopped';
+      } else {
+        // Start camera
+        this.textContent = 'Loading...';
+        this.disabled = true;
+        try {
+          await startCamera();
+          this.textContent = 'Stop Camera';
+        } catch (error) {
+          console.error('Camera error:', error);
+          statusText.textContent = 'Error: Camera access denied';
+          cameraError.style.display = 'block';
+          cameraError.textContent = "Please allow camera access\n" + 
+            (isMobile() ? "Look for browser popup" : "Check browser address bar for camera icon");
+          this.textContent = 'Start Camera';
+        }
+        this.disabled = false;
+      }
+    });
+    
+    function stopCamera() {
+      detectionActive = false;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      cameraError.style.display = 'none';
+      resetAlarmState();
+    }
+    
+    function resetAlarmState() {
+      frame.style.borderColor = '#00ff00';
+      frame.style.boxShadow = '0 0 25px rgba(0, 255, 0, 0.7)';
+      indicator.className = 'indicator';
+      alarmOverlay.style.display = 'none';
+      alarm.pause();
+      alarm.currentTime = 0;
+    }
+    
+    async function startCamera() {
+      statusText.textContent = 'Requesting camera...';
+      cameraError.style.display = 'none';
+      
+      try {
+        // Stop any existing camera
+        if (stream) {
+          stopCamera();
+        }
+        
+        // Request camera access (this will trigger permission prompt)
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          } 
+        });
+        
+        video.srcObject = stream;
+        detectionActive = true;
+        statusText.textContent = 'Detecting...';
+        
+        // Wait for camera to be ready
+        await new Promise((resolve) => {
+          video.onloadedmetadata = resolve;
+        });
+        
+        // Start checking brightness
+        checkBrightness();
+      } catch (error) {
+        console.error('Camera error:', error);
+        statusText.textContent = 'Error: Camera access denied';
+        cameraError.style.display = 'block';
+        cameraError.textContent = "Please allow camera access\n" + 
+          (isMobile() ? "Check browser settings if no popup appears" : "Check browser address bar for camera icon");
+        throw error;
+      }
+    }
+    
+    function checkBrightness() {
+      if (!detectionActive) return;
+      
+      try {
+        // Capture camera frame
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Get center area (circle)
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const size = 150;
+        const radius = size / 2;
+        const imageData = ctx.getImageData(centerX - radius, centerY - radius, size, size);
+        const data = imageData.data;
+        
+        // Calculate brightness
+        let total = 0;
+        let count = 0;
+        
+        // Check every 2nd pixel for performance
+        for (let y = 0; y < size; y += 2) {
+          for (let x = 0; x < size; x += 2) {
+            const dx = x - radius;
+            const dy = y - radius;
+            if (Math.sqrt(dx * dx + dy * dy) <= radius) {
+              const idx = (y * size + x) * 4;
+              const r = data[idx];
+              const g = data[idx + 1];
+              const b = data[idx + 2];
+              total += (0.299 * r + 0.587 * g + 0.114 * b);
+              count++;
+            }
+          }
+        }
+        
+        const avgBrightness = Math.round(total / count);
+        lastAvgBrightness = avgBrightness;
+        brightnessValue.textContent = avgBrightness;
+        
+        // Check if alarm should trigger
+        if (avgBrightness < detectionThreshold) {
+          statusText.textContent = `ALARM: Low Light (${avgBrightness} < ${detectionThreshold})`;
+          frame.style.borderColor = '#ff0000';
+          frame.style.boxShadow = '0 0 25px rgba(255, 0, 0, 0.7)';
+          indicator.className = 'indicator alarm';
+          alarmOverlay.style.display = 'block';
+          
+          if (audioEnabled && alarm.paused) {
+            alarm.currentTime = 0;
+            alarm.play().catch(e => console.log("Alarm play error:", e));
+          }
+        } else {
+          statusText.textContent = `Normal (${avgBrightness} >= ${detectionThreshold})`;
+          resetAlarmState();
+        }
+      } catch (error) {
+        console.error('Processing error:', error);
+      }
+      
+      // Check again in 300ms
+      setTimeout(checkBrightness, 300);
+    }
+    
+    // Detect if device is mobile
+    function isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    // Initialize app
+    window.addEventListener('load', () => {
+      testAlarmBtn.disabled = false;
+      toggleCameraBtn.disabled = false;
+      
+      // Check if camera is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        cameraError.textContent = "Your browser doesn't support camera access";
+        cameraError.style.display = 'block';
+        toggleCameraBtn.disabled = true;
+      }
+      
+      // Special handling for PC browsers
+      if (!isMobile()) {
+        document.querySelector('.subtitle').textContent += " (Works on PC too)";
+      }
+    });
+  </script>
+</body>
+</html>
