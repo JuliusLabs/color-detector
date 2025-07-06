@@ -438,12 +438,12 @@
   let audioEnabled = false;
 
   // Set initial threshold display
-  thresholdValue.textContent = `${detectionThreshold} (Lower = more sensitive)`;
+  thresholdValue.textContent = `${detectionThreshold} (Lower = less sensitive)`;
 
   // When slider changes
   thresholdSlider.addEventListener('input', function() {
     detectionThreshold = parseInt(this.value);
-    thresholdValue.textContent = `${detectionThreshold} (Lower = more sensitive)`;
+    thresholdValue.textContent = `${detectionThreshold} (Lower = less sensitive)`;
   });
 
   // Enable audio button
